@@ -1,0 +1,35 @@
+.root {
+    -fx-background-color: #000000;
+}
+.label {
+    -fx-background-color: #FFFFFF;
+    -fx-font-size: 20;
+    -fx-font-weight: bold;
+}
+.button {
+    -fx-font-size: 20;
+    -fx-border-radius: 60;
+}
+.numbers {
+    -fx-background-color: #B8BABC;
+}
+.numbers:pressed {
+    -fx-background-color: #878787;
+}
+.operations {
+    -fx-background-color: #F29E3E;
+}
+.operations:pressed {
+    -fx-background-color: #C17F34;
+}
+
+#equals {
+    -fx-background-color: #00AF2B;
+}
+#equals:pressed {
+    -fx-background-color: #007A1E;
+}
+
+#historydisplay {
+    -fx-font-size: 10;
+}
