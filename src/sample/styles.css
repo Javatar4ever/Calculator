@@ -22,6 +22,24 @@
 .operations:pressed {
     -fx-background-color: #C17F34;
 }
+.memorybuttons {
+    -fx-background-color: #FF0000;
+}
+.memorybuttons:pressed {
+    -fx-background-color: #BA0000;
+}
+.advancedbuttons {
+    -fx-background-color: #84570a;
+}
+.advancedbuttons:pressed {
+    -fx-background-color: #664206;
+}
+.controlbuttons {
+    -fx-background-color: #FFFFFF;
+}
+.controlbuttons:pressed {
+    -fx-background-color: #cccccc;
+}
 
 #equals {
     -fx-background-color: #00AF2B;
