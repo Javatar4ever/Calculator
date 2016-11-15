@@ -4,132 +4,153 @@ import java.util.*;
 
 public class Calculate {
 
+    public static final String functionsRegex = "(sqrt|sqr|sin|cos|tan|cube|fact)";
+    public static final String operatorRegex = "[-+*/^%]";
+
     interface Operation {
         double calculate(double a, double b);
     }
+    interface Function {
+        double calculate(double a);
+    }
 
-    //Hashmap to dynamically access functions
     public static final Map<String, Operation> operations = new HashMap<>();
     static {
         operations.put("+", (a, b) -> a + b);
         operations.put("-", (a, b) -> a - b);
         operations.put("*", (a, b) -> a * b);
         operations.put("/", (a, b) -> a / b);
+        operations.put("^", (a, b) -> Math.pow(a, b));
+        operations.put("%", (a, b) -> a % b);
+    }
+    public static final Map<String, Function> functions = new HashMap<>();
+    static {
+        functions.put("sqrt", a -> Math.sqrt(a));
+        functions.put("sqr", a -> Math.pow(a, 2));
+        functions.put("cube", a -> Math.pow(a, 3));
+        functions.put("sin", a -> Math.sin(a));
+        functions.put("cos", a -> Math.cos(a));
+        functions.put("tan", a -> Math.tan(a));
+        functions.put("fact", a -> factorial(a));
     }
 
-    public Calculate() {
-        System.out.println(getRPN("10*(10+9)-5"));
+    private static double factorial(double number) {
+        if (number <= 1) {
+            return 1;
+        } else {
+            return number * factorial(number - 1);
+        }
     }
 
     public double getAnswer(String equation) {
-
         String rpn = getRPN(equation);
         return solveRPN(rpn);
     }
 
-    /*Shunting-yard algorithm
-    Returns equation in Reverse Polish Notation (RPN)
-
-    ( ) : priority 0
-    + - : priority 1
-    / * : priority 2
-
-    */
+    //Shunting yard algorithm: https://en.wikipedia.org/wiki/Shunting-yard_algorithm
     private String getRPN(String equation) {
 
-        String rpn = "";
-        Stack<String> stack = new Stack<>();
-        int priority = 0;
+        String outputRPN = "";
+        Stack<String> operatorStack = new Stack<>();
+        int topPrecedence, currentPrecedence;
+        boolean leftAssociative;
 
-        String[] tokens = equation.split("(?<=[-+*/()])|(?=[-+*/()])");
+        String[] tokens = equationToTokens(equation);
 
         for (int i = 0; i < tokens.length; i++) {
-            if (tokens[i].matches("[-+*/()]")) { //use of regular expression (regex) to see if operator
-
-                if (stack.isEmpty()) {
-                    stack.push(tokens[i]);
+            if (tokens[i].matches(functionsRegex)) {
+                operatorStack.push(tokens[i]);
+            }
+            else if (tokens[i].matches("[()]")) {
+                if (tokens[i].equals("(")) {
+                    operatorStack.push(tokens[i]);
                 } else {
-
-                    //Handle parantheses
-
-                    if (tokens[i].matches("[()]")) {
-                        if (tokens[i].equals("(")) {
-                            stack.push(tokens[i]);
-
-                        } else {
-                            while (!stack.isEmpty() && !stack.peek().equals("(")) {
-                                rpn += stack.pop() + " ";
-                            }
-
-                            stack.pop(); //disregard left paranthesis
-                        }
-                        continue;
+                    while (!operatorStack.peek().equals("(")) {
+                        outputRPN += operatorStack.pop() + " ";
                     }
 
+                    operatorStack.pop();
 
-                    String topToken = stack.peek(); //peek at stack to get it's priority
-
-                    if (topToken.matches("[*/]")) priority = 2;
-                    else if (topToken.matches("[+-]")) priority = 1;
-                    else if (topToken.matches("[(]")) priority = 0;
-
-                    if (priority == 2) {
-                        if (tokens[i].matches("[+-]")) {
-                            rpn += stack.pop() + " "; //adds to output because priority is higher than + and -
-                            i--; //makes so the same priority check can be done on the next operator in stack
-                        } else if (tokens[i].matches("[*/]")){
-                            rpn += stack.pop() + " "; //adds to output because priority is equal to / and *
-                            i--;
-                        }
-                    } else if (priority == 1) {
-                        if (tokens[i].matches("[+-]")) {
-                            rpn += stack.pop() + " ";
-                            i--;
-                        } else if (tokens[i].matches("[*/]")) {
-                            stack.push(tokens[i]); //pushes because * and / has higher priority than 0
-                        }
-                    } else { //condition == 0
-                        stack.push(tokens[i]); //paranthesis can't be added to output queue
+                    if (operatorStack.peek().matches(functionsRegex)) {
+                        outputRPN += operatorStack.pop() + " ";
                     }
                 }
-
-            } else { //token is a number
-                rpn += tokens[i] + " "; //space to be able to split
             }
-        } // end for
+            else if (tokens[i].matches(operatorRegex)) {
 
-        while(!stack.isEmpty()) { //fill rpn with remaining operators
-            rpn += stack.pop() + " ";
+                if (operatorStack.isEmpty()) {
+                    operatorStack.push(tokens[i]);
+                } else {
+
+                    String topToken = operatorStack.peek();
+
+                    if (topToken.equals("^")) topPrecedence = 3;
+                    else if (topToken.matches("[*/%]")) topPrecedence = 2;
+                    else if (topToken.matches("[+-]")) topPrecedence = 1;
+                    else if (topToken.matches("[(]")) topPrecedence = 0;
+                    else topPrecedence = 0;
+
+                    if (tokens[i].equals("^")) { currentPrecedence = 3; leftAssociative = false; }
+                    else if (tokens[i].matches("[*/%]")) { currentPrecedence = 2; leftAssociative = true; }
+                    else if (tokens[i].matches("[+-]")) { currentPrecedence = 1; leftAssociative = true; }
+                    else { currentPrecedence = 0; leftAssociative = true; }
+
+                    if ((leftAssociative && (currentPrecedence <= topPrecedence)) ||
+                            (!leftAssociative && currentPrecedence < topPrecedence)) {
+                        outputRPN += operatorStack.pop() + " ";
+                        i--;
+                    } else {
+                        operatorStack.push(tokens[i]);
+                    }
+                }
+            } else {
+                outputRPN += tokens[i] + " ";
+            }
         }
 
-        return rpn;
+        while(!operatorStack.isEmpty()) {
+            outputRPN += operatorStack.pop() + " ";
+        }
 
+        return outputRPN;
     }
 
+    //Solve Reverse Polish Notation: https://en.wikipedia.org/wiki/Reverse_Polish_notation
     private double solveRPN(String rpn) {
 
-        Stack<String> stack = new Stack<>();
+        Stack<String> numberStack = new Stack<>();
         double rightOperand, leftOperand;
 
         String[] tokens = rpn.split(" ");
 
         for (String token : tokens) {
-            if (token.matches("[-+*/]")) {
 
-                rightOperand = Double.parseDouble(stack.pop());
-                leftOperand = Double.parseDouble(stack.pop());
+            if (token.matches(functionsRegex)) {
+                double result = functions.get(token).calculate(Double.parseDouble(numberStack.pop()));
+                numberStack.push(Double.toString(result));
+            }
+
+            else if (token.matches(operatorRegex)) {
+
+                rightOperand = Double.parseDouble(numberStack.pop());
+                leftOperand = Double.parseDouble(numberStack.pop());
 
                 double result = operations.get(token).calculate(leftOperand, rightOperand);
 
-                stack.push(Double.toString(result));
+                numberStack.push(Double.toString(result));
 
             } else {
-                stack.push(token);
+                numberStack.push(token);
             }
         }
+        return Double.parseDouble(numberStack.pop());
+    }
 
-        return Double.parseDouble(stack.pop());
+    private String[] equationToTokens(String equation) {
+        ArrayList<String> tokens = new ArrayList<>(Arrays.asList(equation.split(
+                "(?<!((\\A|[-+*/^(%])-))(?<=[-+*/(^%]|sqrt|\bsqr\b|cube|sin|cos|tan|fact)|(?=[-+*/()^%]|sqrt|\bsqr\b|cube|sin|cos|tan|fact)")));
 
+        return tokens.toArray(new String[tokens.size()]);
     }
 
 }

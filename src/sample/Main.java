@@ -1,6 +1,7 @@
 package sample;
 
 import javafx.application.Application;
+import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -10,7 +11,18 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception{
-        Parent root = FXMLLoader.load(getClass().getResource("sample.fxml"));
+
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("sample.fxml"));
+        Parent root = loader.load();
+
+        Controller controller = loader.<Controller>getController();
+        controller.setLoader(loader);
+
+
+
+        root.setOnKeyTyped(new Keyboard(loader.<Controller>getController()));
+        root.setOnKeyPressed(new Keyboard(loader.<Controller>getController()));
+
         primaryStage.setTitle("Calculator");
         primaryStage.setScene(new Scene(root, 500, 450));
         primaryStage.show();
